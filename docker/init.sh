@@ -37,10 +37,12 @@ else
     bench --site crm.localhost set-config server_script_enabled 1
     bench --site crm.localhost clear-cache
 
-    # Create Procfile dengan nama yang lebih aman
-    echo "web: frappe serve --port 8000" > Procfile
-    echo "worker: frappe worker --queue default --quiet" >> Procfile
-    echo "worker_long: frappe worker --queue long default --quiet" >> Procfile
+    # Create Procfile properly with quote handling
+    cat > Procfile <<'EOF'
+web: frappe serve --port 8000
+worker: frappe worker --queue default --quiet
+worker_long: frappe worker --queue long default --quiet
+EOF
 
     echo "Starting bench..."
     bench start
