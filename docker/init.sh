@@ -3,7 +3,7 @@
 echo "Starting CRM setup..."
 
 write_procfile() {
-    cat > frappe-bench/Procfile <<'EOF'
+    cat > Procfile <<'EOF'
 web: bench serve --port 8000
 worker: bench worker --queue default,short --quiet
 worker_long: bench worker --queue long,default,short --quiet
@@ -13,8 +13,8 @@ EOF
 # Check if bench already exists
 if [ -f "frappe-bench/apps/frappe/frappe/__init__.py" ]; then
     echo "Bench already exists, starting..."
-    write_procfile
     cd frappe-bench
+    write_procfile
     exec bench start
 else
     echo "Cleaning up invalid bench directory if exists..."
