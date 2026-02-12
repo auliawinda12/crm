@@ -148,3 +148,17 @@ def get_file_uploader_defaults(doctype: str):
 		"max_number_of_files": max_number_of_files,
 		"make_attachments_public": bool(make_attachments_public),
 	}
+
+
+@frappe.whitelist()
+def get_admin_email():
+	from crm.api.settings import get_admin_email as _get_admin_email
+
+	return _get_admin_email()
+
+
+@frappe.whitelist()
+def update_admin_email(new_email: str):
+	from crm.api.settings import update_admin_email as _update_admin_email
+
+	return _update_admin_email(new_email=new_email)
