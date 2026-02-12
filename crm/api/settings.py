@@ -2,6 +2,55 @@ import frappe
 
 
 @frappe.whitelist()
+def get_admin_email():
+	"""
+	Get the current email address for Administrator user.
+
+	Returns:
+		dict: Dictionary containing the Administrator's email
+	"""
+	admin_email = frappe.db.get_value("User", "Administrator", "email")
+	return {"email": admin_email}
+
+
+@frappe.whitelist()
+def update_admin_email(new_email):
+	"""
+	Update the email address for the Administrator user.
+
+	Args:
+		new_email (str): The new email address for Administrator
+
+	Returns:
+		dict: Success message
+	"""
+	# Validate email format
+	if not new_email or "@" not in new_email:
+		frappe.throw("Invalid email address")
+
+	# Check if email already exists for another user
+	existing_user = frappe.db.get_value("User", {"email": new_email, "name": ["!=", "Administrator"]}, "name")
+	if existing_user:
+		frappe.throw("This email is already in use by another user")
+
+	# Update Administrator email
+	try:
+		frappe.db.set_value("User", "Administrator", {
+			"email": new_email,
+			"username": new_email
+		})
+		frappe.db.commit()
+
+		return {
+			"success": True,
+			"message": f"Administrator email updated to {new_email}"
+		}
+	except Exception as e:
+		frappe.db.rollback()
+		frappe.throw(f"Failed to update email: {str(e)}")
+
+
+@frappe.whitelist()
 def create_email_account(data):
 	service = data.get("service")
 	service_config = email_service_config.get(service)
