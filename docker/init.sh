@@ -19,8 +19,8 @@ bench set-redis-queue-host redis://redis:6379
 bench set-redis-socketio-host redis://redis:6379
 
 # Remove redis, watch from Procfile
-sed -i '/redis/d' ./Procfile
-sed -i '/watch/d' ./Procfile
+sed -i '/redis/d' ./Procfile 2>/dev/null || true
+sed -i '/watch/d' ./Procfile 2>/dev/null || true
 
 bench get-app crm https://github.com/auliawinda12/crm --branch main
 bench get-app frappe_whatsapp https://github.com/shridarpatil/frappe_whatsapp --branch master
