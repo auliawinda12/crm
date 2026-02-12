@@ -21,7 +21,7 @@ else
     bench set-redis-socketio-host redis://redis:6379
 
     # Get CRM app from your repository
-    bench get-app crm https://github.com/auliawinda12/crm --branch develop
+    bench get-app crm https://github.com/auliawinda12/crm.git --branch develop
 
     # Create site
     bench new-site crm.localhost \
