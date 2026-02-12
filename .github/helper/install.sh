@@ -40,7 +40,7 @@ sed -i 's/schedule:/# schedule:/g' Procfile
 sed -i 's/socketio:/# socketio:/g' Procfile
 sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile
 
-bench get-app crm "${GITHUB_WORKSPACE}"
+bench get-app crm https://github.com/auliawinda12/crm.git --branch develop
 bench setup requirements --dev
 
 bench start &>> ~/frappe-bench/bench_start.log &
