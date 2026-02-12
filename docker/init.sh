@@ -1,45 +1,51 @@
 #!/bin/bash
 
-# Clean up existing bench if exists
+echo "Starting CRM setup..."
+
+# Check if bench already exists
 if [ -d "/home/frappe/frappe-bench" ]; then
-    echo "Removing existing bench..."
-    rm -rf /home/frappe/frappe-bench
+    echo "Bench already exists, starting..."
+    cd /home/frappe/frappe-bench
+    bench start
+else
+    echo "Creating new bench..."
+    bench init --skip-redis-config-generation frappe-bench --version develop
+    cd frappe-bench
+
+    # Configure hosts
+    bench set-mariadb-host mariadb
+    bench set-redis-cache-host redis://redis:6379
+    bench set-redis-queue-host redis://redis:6379
+    bench set-redis-socketio-host redis://redis:6379
+
+    # Get CRM app from your repository
+    bench get-app crm https://github.com/auliawinda12/crm --branch main
+
+    # Create site
+    bench new-site crm.localhost \
+        --force \
+        --mariadb-root-password 123 \
+        --admin-password admin \
+        --no-mariadb-socket
+
+    # Install apps
+    bench --site crm.localhost install-app crm
+
+    # Set developer mode
+    bench --site crm.localhost set-config developer_mode 1
+    bench --site crm.localhost set-config mute_emails 0
+    bench --site crm.localhost set-config server_script_enabled 1
+    bench --site crm.localhost clear-cache
+
+    # Create Procfile
+    cat > Procfile << 'EOF'
+web: frappe serve --port 8000
+worker: frappe worker --queue default --quiet
+worker_long: frappe worker --queue long default --quiet
+EOF
+
+    echo "Starting bench..."
+    bench start
 fi
 
-echo "Creating new bench..."
-
-bench init --skip-redis-config-generation frappe-bench --version develop
-
-cd frappe-bench
-
-# Use containers instead of localhost
-bench set-mariadb-host mariadb
-bench set-redis-cache-host redis://redis:6379
-bench set-redis-queue-host redis://redis:6379
-bench set-redis-socketio-host redis://redis:6379
-
-# Remove redis, watch from Procfile
-sed -i '/redis/d' ./Procfile 2>/dev/null || true
-sed -i '/watch/d' ./Procfile 2>/dev/null || true
-
-bench get-app crm https://github.com/auliawinda12/crm --branch main
-bench get-app frappe_whatsapp https://github.com/shridarpatil/frappe_whatsapp --branch master
-
-bench new-site crm.localhost \
-    --force \
-    --mariadb-root-password 123 \
-    --admin-password admin \
-    --no-mariadb-socket
-
-bench --site crm.localhost install-app crm
-bench --site crm.localhost install-app frappe_whatsapp
-bench --site crm.localhost set-config developer_mode 1
-bench --site crm.localhost set-config mute_emails 0
-bench --site crm.localhost set-config server_script_enabled 1
-bench --site crm.localhost clear-cache
-bench use crm.localhost
-
-# Setup Gmail email account for CRM
-bench --site crm.localhost execute crm.setup_email.setup_gmail_account
-
-bench start
+echo "CRM is ready at http://localhost:8000"
