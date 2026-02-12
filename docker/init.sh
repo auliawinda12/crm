@@ -2,12 +2,14 @@
 
 echo "Starting CRM setup..."
 
-# Check if bench already exists
-if [ -d "/home/frappe/frappe-bench" ]; then
+# Check if bench already exists by checking for a valid file inside
+if [ -f "frappe-bench/bench/__init__.py" ]; then
     echo "Bench already exists, starting..."
-    cd /home/frappe/frappe-bench
-    bench start
+    cd frappe-bench
+    exec bench start
 else
+    echo "Cleaning up invalid bench directory if exists..."
+    rm -rf frappe-bench
     echo "Creating new bench..."
     bench init --skip-redis-config-generation frappe-bench --version develop
     cd frappe-bench
