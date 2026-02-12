@@ -1,14 +1,14 @@
-#!bin/bash
+#!/bin/bash
 
-if [ -d "/home/frappe/frappe-bench/apps/frappe" ]; then
-    echo "Bench already exists, skipping init"
-    cd frappe-bench
-    bench start
-else
-    echo "Creating new bench..."
+# Clean up existing bench if exists
+if [ -d "/home/frappe/frappe-bench" ]; then
+    echo "Removing existing bench..."
+    rm -rf /home/frappe/frappe-bench
 fi
 
-bench init --skip-redis-config-generation frappe-bench --version version-15
+echo "Creating new bench..."
+
+bench init --skip-redis-config-generation frappe-bench --version develop
 
 cd frappe-bench
 
@@ -23,6 +23,7 @@ sed -i '/redis/d' ./Procfile
 sed -i '/watch/d' ./Procfile
 
 bench get-app crm --branch main
+bench get-app frappe_whatsapp https://github.com/shridarpatil/frappe_whatsapp --branch master
 
 bench new-site crm.localhost \
     --force \
@@ -31,10 +32,14 @@ bench new-site crm.localhost \
     --no-mariadb-socket
 
 bench --site crm.localhost install-app crm
+bench --site crm.localhost install-app frappe_whatsapp
 bench --site crm.localhost set-config developer_mode 1
-bench --site crm.localhost set-config mute_emails 1
+bench --site crm.localhost set-config mute_emails 0
 bench --site crm.localhost set-config server_script_enabled 1
 bench --site crm.localhost clear-cache
 bench use crm.localhost
+
+# Setup Gmail email account for CRM
+bench --site crm.localhost execute crm.setup_email.setup_gmail_account
 
 bench start

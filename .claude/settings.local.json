@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose down:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker-compose:*)",
+      "WebSearch",
+      "mcp__acp__Bash",
+      "mcp__acp__Write",
+      "mcp__acp__Edit",
+      "Bash(bench execute:*)",
+      "Bash(ls:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(gh:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

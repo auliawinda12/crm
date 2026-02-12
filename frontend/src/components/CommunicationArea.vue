@@ -202,7 +202,7 @@ async function sendMail() {
   if (attachments.value.length) {
     capture('email_attachments_added')
   }
-  await call('frappe.core.doctype.communication.email.make', {
+  await call('crm.api.communication.make', {
     recipients: recipients.join(', '),
     attachments: attachments.value.map((x) => x.name),
     cc: cc.join(', '),
@@ -212,8 +212,6 @@ async function sendMail() {
     doctype: props.doctype,
     name: doc.value.name,
     send_email: 1,
-    sender: getUser().email,
-    sender_full_name: getUser()?.full_name || undefined,
   })
 }
 
