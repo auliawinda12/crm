@@ -25,7 +25,7 @@ services:
     working_dir: /home/frappe
     volumes:
       - frappe-bench-data:/home/frappe/frappe-bench
-      - .:/workspace
+    # - .:/workspace  # Temporarily disable
     ports:
       - 8000:8000
       - 9000:9000
