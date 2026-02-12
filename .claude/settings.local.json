@@ -16,7 +16,8 @@
       "Bash(gh:*)",
       "Bash(git remote set-url:*)",
       "Bash(git push:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(curl:*)"
     ]
   }
 }
