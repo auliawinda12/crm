@@ -2,9 +2,18 @@
 
 echo "Starting CRM setup..."
 
-# Check if bench already exists by checking for a valid file inside
-if [ -f "frappe-bench/bench/__init__.py" ]; then
+write_procfile() {
+    cat > frappe-bench/Procfile <<'EOF'
+web: bench serve --port 8000
+worker: bench worker --queue default,short --quiet
+worker_long: bench worker --queue long,default,short --quiet
+EOF
+}
+
+# Check if bench already exists
+if [ -f "frappe-bench/apps/frappe/frappe/__init__.py" ]; then
     echo "Bench already exists, starting..."
+    write_procfile
     cd frappe-bench
     exec bench start
 else
@@ -39,15 +48,11 @@ else
     bench --site crm.localhost set-config server_script_enabled 1
     bench --site crm.localhost clear-cache
 
-    # Create Procfile properly with quote handling
-    cat > Procfile <<'EOF'
-web: frappe serve --port 8000
-worker: frappe worker --queue default --quiet
-worker_long: frappe worker --queue long default --quiet
-EOF
+    # Use a minimal Procfile for containerized setup
+    write_procfile
 
     echo "Starting bench..."
-    bench start
+    exec bench start
 fi
 
 echo "CRM is ready at http://localhost:8000"
