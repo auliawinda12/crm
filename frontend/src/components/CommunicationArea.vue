@@ -287,7 +287,17 @@ function toggleEmailBox() {
   if (showCommentBox.value) {
     showCommentBox.value = false
   }
-  showEmailBox.value = !showEmailBox.value
+  const willOpen = !showEmailBox.value
+  showEmailBox.value = willOpen
+  if (willOpen && newEmailEditor.value) {
+    // Keep composer context in sync with currently opened document.
+    newEmailEditor.value.subject = subject.value
+    newEmailEditor.value.toEmails = doc.value.email ? [doc.value.email] : []
+    newEmailEditor.value.ccEmails = []
+    newEmailEditor.value.bccEmails = []
+    newEmailEditor.value.cc = false
+    newEmailEditor.value.bcc = false
+  }
 }
 
 function toggleCommentBox() {
