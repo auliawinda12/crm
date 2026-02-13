@@ -9,6 +9,16 @@
         :actions="leadsListView.customListActions"
       />
       <Button
+        variant="ghost"
+        :label="hideUnassignedEmailLeads ? __('Show Unassigned') : __('Hide Unassigned')"
+        @click="toggleHideUnassigned"
+      >
+        <template #icon>
+          <EyeIcon v-if="!hideUnassignedEmailLeads" class="h-4 w-4" />
+          <EyeOffIcon v-else class="h-4 w-4" />
+        </template>
+      </Button>
+      <Button
         variant="solid"
         :label="__('Create')"
         iconLeft="plus"
@@ -289,6 +299,7 @@ import TaskIcon from '@/components/Icons/TaskIcon.vue'
 import CommentIcon from '@/components/Icons/CommentIcon.vue'
 import IndicatorIcon from '@/components/Icons/IndicatorIcon.vue'
 import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
+import EyeOffIcon from '@/components/Icons/EyeOffIcon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
 import LeadsListView from '@/components/ListViews/LeadsListView.vue'
 import EmptyState from '@/components/ListViews/EmptyState.vue'
@@ -319,6 +330,8 @@ const leadsListView = ref(null)
 const showLeadModal = ref(false)
 
 const defaults = reactive({})
+
+const hideUnassignedEmailLeads = ref(false)
 
 // leads data is loaded in the ViewControls component
 const leads = ref({})
@@ -531,6 +544,10 @@ function onNewClick(column) {
   }
 
   showLeadModal.value = true
+}
+
+function toggleHideUnassigned() {
+	hideUnassignedEmailLeads.value = !hideUnassignedEmailLeads.value
 }
 
 function actions(itemName) {

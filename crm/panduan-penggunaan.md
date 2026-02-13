@@ -229,6 +229,45 @@ Klik pada lead dari daftar untuk membuka halaman detail. Di halaman ini Anda dap
 2. **Drag-and-drop** kartu lead ke kolom status yang diinginkan
 3. Status akan otomatis ter-update
 
+### 4.6 Sample New Template Email untuk Lead (Bahasa Indonesia)
+
+Gunakan contoh berikut saat membuat email template baru:
+
+1. Buka **Settings > Email Templates**
+2. Klik **New template**
+3. Isi field berikut:
+   - **Name:** `Follow Up Lead - ID`
+   - **For:** `Lead`
+   - **Subject:** `Terima kasih sudah menghubungi kami, {{ lead_name }}`
+   - **Content type:** `Rich Text` atau `HTML`
+
+**Contoh konten (Rich Text):**
+
+```text
+Halo {{ lead_name }},
+
+Terima kasih sudah menghubungi tim kami.
+Kami sudah menerima kebutuhan Anda dan siap membantu proses selanjutnya.
+
+Jika berkenan, balas email ini agar kami bisa menjadwalkan diskusi singkat.
+
+Salam,
+Tim Sales
+```
+
+**Contoh konten (HTML):**
+
+```html
+<p>Halo {{ lead_name }},</p>
+
+<p>Terima kasih sudah menghubungi tim kami.</p>
+<p>Kami sudah menerima kebutuhan Anda dan siap membantu proses selanjutnya.</p>
+
+<p>Jika berkenan, balas email ini agar kami bisa menjadwalkan diskusi singkat.</p>
+
+<p>Salam,<br>Tim Sales</p>
+```
+
 ---
 
 ## Tahap 5: Manajemen Deals

@@ -1,0 +1,36 @@
+--python
+import frappe
+
+try:
+    frappe.init(site='crm.localhost')
+    frappe.connect()
+
+    # Cari dan update template email
+    templates = frappe.db.sql("SELECT name, response_html FROM `tabEmail Template`")
+
+    count = 0
+    for t in templates:
+        name = t[0]
+        html = t[1]
+
+        # Update untuk menghapus teks footer
+        if 'leave this conversation' in html.lower():
+            html = html.replace('leave this conversation to stop receiving emails of this type', '')
+            html = html.replace('If you no longer wish to receive these emails, please leave this conversation.', '')
+            html = html.replace('To stop receiving these emails, please leave this conversation.', '')
+            html = html.replace('To unsubscribe, please leave this conversation.', '')
+
+        if not html.strip() or html == '<div>':
+            html = ''
+
+        frappe.db.sql('UPDATE `tabEmail Template` SET response_html = %s WHERE name = %s', (html,))
+        frappe.db.sql('UPDATE `tabEmail Template` SET subject = %s WHERE name = %s AND subject LIKE %s', (name.replace('Leave this conversation', ''), '')
+        frappe.db.commit()
+        count += 1
+
+        print('Updated: {} - {}'.format(name))
+
+    print('Footer removed from {} email templates'.format(count))
+
+except Exception as e:
+    print('Error: ' + str(e))
