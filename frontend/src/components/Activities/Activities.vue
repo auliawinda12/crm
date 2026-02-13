@@ -555,6 +555,7 @@ const whatsappMessages = createResource({
 
 onBeforeUnmount(() => {
   $socket.off('whatsapp_message')
+  $socket.off('crm_communication_update')
 })
 
 onMounted(() => {
@@ -566,6 +567,7 @@ onMounted(() => {
       whatsappMessages.reload()
     }
   })
+  $socket.on('crm_communication_update', handleCommunicationUpdate)
 
   nextTick(() => {
     const hash = route.hash.slice(1) || null
@@ -575,6 +577,23 @@ onMounted(() => {
     }
   })
 })
+
+function handleCommunicationUpdate(data) {
+  if (!data?.reference_doctype || !data?.reference_name) return
+
+  const sameDoc =
+    data.reference_doctype === props.doctype &&
+    data.reference_name === props.docname
+
+  const linkedLeadInDeal =
+    props.doctype === 'CRM Deal' &&
+    data.reference_doctype === 'CRM Lead' &&
+    doc.value?.lead &&
+    data.reference_name === doc.value.lead
+
+  if (!sameDoc && !linkedLeadInDeal) return
+  all_activities.reload()
+}
 
 function sendTemplate(template) {
   showWhatsappTemplates.value = false

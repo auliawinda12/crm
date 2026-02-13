@@ -212,6 +212,7 @@ async function sendMail() {
     doctype: props.doctype,
     name: doc.value.name,
     send_email: 1,
+    now: 1,
   })
 }
 
