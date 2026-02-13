@@ -157,6 +157,7 @@ doc_events = {
 	},
 	"Communication": {
 		"after_insert": ["crm.api.realtime.publish_communication_update"],
+		"before_send": ["crm.api.communication.remove_email_footer_from_communication"],
 	},
 	"CRM Deal": {
 		"on_update": [

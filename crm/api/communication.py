@@ -2,6 +2,23 @@ import frappe
 from inspect import signature
 
 
+def remove_email_footer_from_communication(doc, method=None):
+	"""
+	Hook to remove 'Leave this conversation' footer from Communication before sending.
+	This is called via doc_events hook before the email is sent.
+	"""
+	if doc and (doc.communication_medium == "Email" or doc.sent_or_received == "Sent"):
+		# Clean message content
+		if doc.content:
+			doc.content = remove_email_footer(doc.content)
+		# Clean subject if it contains footer text
+		if doc.subject:
+			doc.subject = remove_email_footer(doc.subject)
+		# Clean reference name if it contains footer
+		if doc.reference_name:
+			doc.reference_name = remove_email_footer(doc.reference_name)
+
+
 def remove_email_footer(message):
 	"""
 	Remove 'Leave this conversation' footer from email message before sending.
