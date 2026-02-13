@@ -6,12 +6,7 @@ export function initSocket() {
   const host = window.location.hostname
   const isLocalhost =
     host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost')
-  const siteName =
-    window.site_name ||
-    window.sitename ||
-    window?.frappe?.boot?.sitename ||
-    host
-  const url = `${window.location.protocol}//${host}:${socketio_port}/${siteName}`
+  const url = `${window.location.protocol}//${host}:${socketio_port}`
   const transportOptions = isLocalhost
     ? {
         transports: ['polling'],
