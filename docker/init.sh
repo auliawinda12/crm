@@ -6,6 +6,7 @@ write_procfile() {
     cat > Procfile <<'EOF'
 web: bench serve --port 8000
 socketio: node apps/frappe/socketio.js
+schedule: bench schedule
 worker: bench worker --queue default,short --quiet
 worker_long: bench worker --queue long,default,short --quiet
 EOF
