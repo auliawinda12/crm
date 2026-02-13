@@ -2,6 +2,31 @@ import frappe
 from inspect import signature
 
 
+def remove_email_footer(message):
+	"""
+	Remove 'Leave this conversation' footer from email message before sending.
+	This footer is automatically added by Frappe but can be intrusive.
+	"""
+	if not message:
+		return message
+
+	footer_texts = [
+		'Leave this conversation to stop receiving emails of this type',
+		'If you no longer wish to receive these emails, please leave this conversation.',
+		'To stop receiving these emails, please leave this conversation.',
+		'To unsubscribe, please leave this conversation.',
+	]
+
+	# Remove footer variations
+	for footer_text in footer_texts:
+		message = message.replace(footer_text, '')
+		# Also handle case variations
+		message = message.replace(footer_text.lower(), '')
+		message = message.replace(footer_text.upper(), '')
+
+	return message.strip()
+
+
 @frappe.whitelist()
 def make(args=None, **kwargs):
 	"""
@@ -42,6 +67,10 @@ def make(args=None, **kwargs):
 		# EXPLICITLY set sender again after any potential overrides
 		args["_force_sender"] = default_email_account["email_id"]
 
+	# Remove "Leave this conversation" footer from message content
+	if "message" in args and args["message"]:
+		args["message"] = remove_email_footer(args["message"])
+
 	# Call the original make function from frappe
 	from frappe.core.doctype.communication.email import make as original_make
 
@@ -54,12 +83,23 @@ def make(args=None, **kwargs):
 	else:
 		result = original_make(**args)
 
-	# FORCE update sender in the result communication document
-	if default_email_account and default_email_account.get("email_id"):
-		if result and isinstance(result, dict):
+	# Remove footer from result communication content
+	if result and isinstance(result, dict):
+		# Clean message content
+		if "message" in result and result["message"]:
+			result["message"] = remove_email_footer(result["message"])
+		# Clean subject if it contains footer text
+		if "subject" in result and result["subject"]:
+			result["subject"] = remove_email_footer(result["subject"])
+
+		# FORCE update sender in the result communication document
+		if default_email_account and default_email_account.get("email_id"):
 			comm_name = result.get("name")
 			if comm_name:
 				frappe.db.set_value("Communication", comm_name, "sender", default_email_account["email_id"])
+				# Also update content without footer
+				if "message" in result:
+					frappe.db.set_value("Communication", comm_name, "content", result["message"])
 				frappe.db.commit()
 
 	return result
