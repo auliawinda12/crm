@@ -3,15 +3,26 @@ import { socketio_port } from '../../../../sites/common_site_config.json'
 import { getCachedListResource, getCachedResource } from 'frappe-ui'
 
 export function initSocket() {
-  let host = window.location.hostname
-  let siteName = window.site_name
-  let port = window.location.port ? `:${socketio_port}` : ''
-  let protocol = port ? 'http' : 'https'
-  let url = `${protocol}://${host}${port}/${siteName}`
+  const host = window.location.hostname
+  const isLocalhost =
+    host === 'localhost' || host === '127.0.0.1' || host.endsWith('.localhost')
+  const siteName =
+    window.site_name ||
+    window.sitename ||
+    window?.frappe?.boot?.sitename ||
+    host
+  const url = `${window.location.protocol}//${host}:${socketio_port}/${siteName}`
+  const transportOptions = isLocalhost
+    ? {
+        transports: ['polling'],
+        upgrade: false,
+      }
+    : {}
 
   let socket = io(url, {
     withCredentials: true,
     reconnectionAttempts: 5,
+    ...transportOptions,
   })
   socket.on('refetch_resource', (data) => {
     if (data.cache_key) {
