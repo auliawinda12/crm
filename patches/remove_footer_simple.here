@@ -1,0 +1,11 @@
+import frappe
+
+frappe.init(site='crm.localhost')
+frappe.connect()
+
+# Update template Indonesia - hapus teks footer
+frappe.db.sql("UPDATE `tabEmail Template` SET response_html = REPLACE(response_html, '', '') WHERE name = 'Email Template Indonesia'")
+frappe.db.sql("UPDATE `tabEmail Template` SET subject = REPLACE(subject, '', '') WHERE name = 'Email Template Indonesia'")
+frappe.db.commit()
+
+print('Footer removed from template Indonesia')
