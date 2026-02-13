@@ -25,6 +25,15 @@ def setup_gmail_account():
 		doc.email_server = "imap.gmail.com"
 		doc.use_ssl = 1
 		doc.use_imap = 1
+		doc.email_sync_option = "ALL"
+		doc.initial_sync_count = 100
+		doc.create_contact = 1
+		doc.track_email_status = 1
+		doc.enable_automatic_linking = 1  # Penting untuk linking email balasan
+		doc.always_use_account_email_id_as_sender = 1
+		# Update IMAP folder append_to
+		if doc.imap_folder:
+			doc.imap_folder[0].append_to = "CRM Lead"
 		doc.save()
 		print(f"Updated email account: {email_id}")
 	else:
@@ -52,6 +61,7 @@ def setup_gmail_account():
 			"initial_sync_count": 100,
 			"create_contact": 1,
 			"track_email_status": 1,
+			"enable_automatic_linking": 1,  # Penting untuk linking email balasan
 			"always_use_account_email_id_as_sender": 1,
 			"append_to": "CRM Lead",
 		})
