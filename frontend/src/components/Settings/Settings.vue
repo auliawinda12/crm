@@ -84,8 +84,6 @@ import { ref, markRaw, computed, watch, h } from 'vue'
 import AssignmentRulePage from './AssignmentRules/AssignmentRulePage.vue'
 import ShieldCheck from '~icons/lucide/shield-check'
 import SlaConfig from './Sla/SlaConfig.vue'
-import AdminEmailSettings from './AdminEmailSettings.vue'
-import ShieldIcon from '~icons/lucide/shield'
 
 const { isManager, isTelephonyAgent, getUser } = usersStore()
 
@@ -111,12 +109,6 @@ const tabs = computed(() => {
     {
       label: __('System configuration'),
       items: [
-        {
-          label: __('Administrator Email'),
-          icon: ShieldIcon,
-          component: markRaw(AdminEmailSettings),
-          condition: () => user.value.name === 'Administrator',
-        },
         {
           label: __('Forecasting'),
           component: markRaw(ForecastingSettings),

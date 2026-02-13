@@ -85,6 +85,78 @@
           />
         </div>
       </div>
+      <div
+        v-if="isAdministrator"
+        class="flex flex-col gap-4 rounded-lg border border-outline-gray-2 bg-surface-gray-1 p-5"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold text-ink-gray-8">
+              {{ __('Administrator Email Settings') }}
+            </h3>
+            <p class="text-sm text-ink-gray-5 mt-1">
+              {{
+                __('Change the email address for the Administrator account')
+              }}
+            </p>
+          </div>
+          <Button
+            v-if="!editingAdminEmail"
+            :label="__('Change Email')"
+            icon-left="edit"
+            @click="startEditingAdminEmail"
+          />
+        </div>
+
+        <div class="rounded-md border border-outline-gray-2 bg-surface-modal p-4">
+          <label class="text-sm text-ink-gray-5">
+            {{ __('Current Administrator Email') }}
+          </label>
+          <div class="mt-1 flex items-center gap-2">
+            <span class="text-base font-medium text-ink-gray-8">
+              {{ currentAdminEmail || __('Not set') }}
+            </span>
+            <Badge
+              v-if="!editingAdminEmail && currentAdminEmail"
+              variant="subtle"
+              theme="green"
+              :label="__('Active')"
+            />
+          </div>
+        </div>
+
+        <div v-if="editingAdminEmail" class="flex flex-col gap-4">
+          <FormControl
+            v-model="newAdminEmail"
+            type="email"
+            :label="__('New Email Address')"
+            :placeholder="__('Enter new email address')"
+            :description="__('The Administrator will use this email to login')"
+          />
+          <FormControl
+            v-model="confirmAdminEmail"
+            type="email"
+            :label="__('Confirm Email Address')"
+            :placeholder="__('Confirm new email address')"
+          />
+          <ErrorMessage :message="adminEmailError" />
+
+          <div class="flex justify-end gap-3">
+            <Button
+              :label="__('Cancel')"
+              variant="outline"
+              @click="cancelEditingAdminEmail"
+            />
+            <Button
+              :label="__('Save Changes')"
+              variant="solid"
+              :loading="updateAdminEmail.loading"
+              :disabled="!isAdminEmailFormValid"
+              @click="saveAdminEmail"
+            />
+          </div>
+        </div>
+      </div>
     </div>
     <div class="flex justify-between items-center">
       <div>
@@ -109,6 +181,7 @@ import {
   Dropdown,
   FileUploader,
   Avatar,
+  Badge,
   createResource,
   toast,
 } from 'frappe-ui'
@@ -121,11 +194,28 @@ const user = computed(() => getUser() || {})
 const profile = ref({})
 const error = ref('')
 const showChangePasswordModal = ref(false)
+const currentAdminEmail = ref('')
+const newAdminEmail = ref('')
+const confirmAdminEmail = ref('')
+const editingAdminEmail = ref(false)
+const adminEmailError = ref('')
+
+const isAdministrator = computed(() => user.value.name === 'Administrator')
 
 const dirty = computed(() => {
   return (
     profile.value.first_name !== user.value.first_name ||
     profile.value.last_name !== user.value.last_name
+  )
+})
+
+const isAdminEmailFormValid = computed(() => {
+  return (
+    newAdminEmail.value &&
+    confirmAdminEmail.value &&
+    newAdminEmail.value === confirmAdminEmail.value &&
+    newAdminEmail.value !== currentAdminEmail.value &&
+    isValidEmail(newAdminEmail.value)
   )
 })
 
@@ -152,6 +242,82 @@ const setUser = createResource({
   },
 })
 
+const getCurrentAdminEmail = createResource({
+  url: 'crm.api.get_admin_email',
+  onSuccess: (data) => {
+    currentAdminEmail.value = data?.email || ''
+    profile.value.email = data?.email || profile.value.email
+  },
+})
+
+const updateAdminEmail = createResource({
+  url: 'crm.api.update_admin_email',
+  makeParams() {
+    return {
+      new_email: newAdminEmail.value,
+    }
+  },
+  onSuccess: () => {
+    currentAdminEmail.value = newAdminEmail.value
+    profile.value.email = newAdminEmail.value
+    editingAdminEmail.value = false
+    newAdminEmail.value = ''
+    confirmAdminEmail.value = ''
+    adminEmailError.value = ''
+    toast.success(__('Administrator email updated successfully'))
+    users.reload()
+  },
+  onError: (err) => {
+    adminEmailError.value =
+      err.messages?.[0] || err.message || __('Failed to update email')
+  },
+})
+
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+function startEditingAdminEmail() {
+  editingAdminEmail.value = true
+  newAdminEmail.value = ''
+  confirmAdminEmail.value = ''
+  adminEmailError.value = ''
+}
+
+function cancelEditingAdminEmail() {
+  editingAdminEmail.value = false
+  newAdminEmail.value = ''
+  confirmAdminEmail.value = ''
+  adminEmailError.value = ''
+}
+
+function saveAdminEmail() {
+  adminEmailError.value = ''
+
+  if (!newAdminEmail.value) {
+    adminEmailError.value = __('Please enter a new email address')
+    return
+  }
+
+  if (newAdminEmail.value !== confirmAdminEmail.value) {
+    adminEmailError.value = __('Email addresses do not match')
+    return
+  }
+
+  if (newAdminEmail.value === currentAdminEmail.value) {
+    adminEmailError.value = __('New email must be different from current email')
+    return
+  }
+
+  if (!isValidEmail(newAdminEmail.value)) {
+    adminEmailError.value = __('Please enter a valid email address')
+    return
+  }
+
+  updateAdminEmail.submit()
+}
+
 function updateImage(fileUrl = '') {
   profile.value.user_image = fileUrl
   setUser.submit()
@@ -159,5 +325,9 @@ function updateImage(fileUrl = '') {
 
 onMounted(() => {
   profile.value = { ...user.value }
+  if (isAdministrator.value) {
+    currentAdminEmail.value = user.value.email || ''
+    getCurrentAdminEmail.fetch()
+  }
 })
 </script>
