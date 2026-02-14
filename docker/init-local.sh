@@ -12,6 +12,9 @@ worker_long: bench worker --queue long,default,short --quiet
 EOF
 }
 
+# Change to home directory
+cd /home/frappe
+
 # Check if bench already exists
 if [ -f "frappe-bench/apps/frappe/frappe/__init__.py" ]; then
     echo "Bench already exists, starting..."
