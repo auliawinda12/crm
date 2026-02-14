@@ -1,5 +1,12 @@
-import frappe
+from html import escape
 from inspect import signature
+import re
+
+import frappe
+from frappe.utils import get_url
+
+
+LOGO_MARKER = 'data-crm-email-logo="1"'
 
 
 def remove_email_footer_from_communication(doc, method=None):
@@ -10,13 +17,53 @@ def remove_email_footer_from_communication(doc, method=None):
 	if doc and (doc.communication_medium == "Email" or doc.sent_or_received == "Sent"):
 		# Clean message content
 		if doc.content:
-			doc.content = remove_email_footer(doc.content)
+			doc.content = inject_crm_logo(remove_email_footer(doc.content))
 		# Clean subject if it contains footer text
 		if doc.subject:
 			doc.subject = remove_email_footer(doc.subject)
 		# Clean reference name if it contains footer
 		if doc.reference_name:
 			doc.reference_name = remove_email_footer(doc.reference_name)
+
+
+def is_html_content(message):
+	if not isinstance(message, str):
+		return False
+	return bool(re.search(r"<[^>]+>", message))
+
+
+def get_crm_logo_path():
+	"""Resolve logo path from FCRM Settings, then app hook, then fallback asset."""
+	logo = frappe.db.get_single_value("FCRM Settings", "brand_logo")
+	if logo:
+		return logo
+
+	hook_logo = frappe.get_hooks("app_icon_url")
+	if hook_logo and hook_logo[0]:
+		return hook_logo[0]
+
+	return "/assets/crm/images/new_logo.svg"
+
+
+def inject_crm_logo(message):
+	"""
+	Prepend CRM logo to outgoing email body.
+	Only applies to HTML content and avoids duplicate insertion using a marker.
+	"""
+	if not message or not isinstance(message, str):
+		return message
+	if LOGO_MARKER in message:
+		return message
+	if not is_html_content(message):
+		return message
+
+	logo_url = escape(get_url(get_crm_logo_path()), quote=True)
+	logo_html = (
+		f'<div {LOGO_MARKER} style="margin-bottom: 16px;">'
+		f'<img src="{logo_url}" alt="CRM Logo" style="max-height: 42px; width: auto; display: block;" />'
+		"</div>"
+	)
+	return f"{logo_html}\n{message}"
 
 
 def remove_email_footer(message):
@@ -86,7 +133,9 @@ def make(args=None, **kwargs):
 
 	# Remove "Leave this conversation" footer from message content
 	if "message" in args and args["message"]:
-		args["message"] = remove_email_footer(args["message"])
+		args["message"] = inject_crm_logo(remove_email_footer(args["message"]))
+	if "content" in args and args["content"]:
+		args["content"] = inject_crm_logo(remove_email_footer(args["content"]))
 
 	# Call the original make function from frappe
 	from frappe.core.doctype.communication.email import make as original_make
@@ -104,7 +153,9 @@ def make(args=None, **kwargs):
 	if result and isinstance(result, dict):
 		# Clean message content
 		if "message" in result and result["message"]:
-			result["message"] = remove_email_footer(result["message"])
+			result["message"] = inject_crm_logo(remove_email_footer(result["message"]))
+		if "content" in result and result["content"]:
+			result["content"] = inject_crm_logo(remove_email_footer(result["content"]))
 		# Clean subject if it contains footer text
 		if "subject" in result and result["subject"]:
 			result["subject"] = remove_email_footer(result["subject"])
@@ -114,9 +165,10 @@ def make(args=None, **kwargs):
 			comm_name = result.get("name")
 			if comm_name:
 				frappe.db.set_value("Communication", comm_name, "sender", default_email_account["email_id"])
-				# Also update content without footer
-				if "message" in result:
-					frappe.db.set_value("Communication", comm_name, "content", result["message"])
+				# Also update content after cleanup/injection
+				content = result.get("message") or result.get("content")
+				if content:
+					frappe.db.set_value("Communication", comm_name, "content", content)
 				frappe.db.commit()
 
 	return result
