@@ -18,18 +18,22 @@ services:
 
   frappe:
     image: frappe/bench:latest
-    command: bash /scripts/init.sh
+    command: bash /scripts/init-local.sh
     restart: unless-stopped
     environment:
       - SHELL=/bin/bash
     working_dir: /home/frappe
     volumes:
       - frappe-bench-data:/home/frappe
-      - ./init.sh:/scripts/init.sh:ro
-    # - .:/workspace  # Temporarily disable
+      - ./init-local.sh:/scripts/init-local.sh:ro
+      # Mount local CRM app to container
+      - ../crm:/home/frappe/frappe-bench/apps/crm:rw
+      # Mount local frappe-ui for frontend development
+      - ../frappe-ui:/home/frappe/frappe-bench/apps/frappe-ui:rw
     ports:
       - 8000:8000
       - 9000:9000
+      - 5173:5173  # Vite dev server port
     depends_on:
       - mariadb
       - redis
