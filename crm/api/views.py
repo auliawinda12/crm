@@ -22,6 +22,8 @@ def get_views(doctype=None):
         )
     )
 
+    views = []
+
     if doctype:
         query = query.where(View.dt == doctype)
         views = query.run(as_dict=True)
