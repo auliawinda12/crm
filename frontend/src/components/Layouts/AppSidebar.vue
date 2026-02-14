@@ -1,75 +1,116 @@
 <template>
-  <div
-    class="relative flex h-full flex-col justify-between transition-all duration-300 ease-in-out"
-    :class="isSidebarCollapsed ? 'w-12' : 'w-[220px]'"
+  <aside
+    :class="[
+      'group/sidebar relative flex h-full flex-col border-r bg-sidebar transition-all duration-300 ease-in-out',
+      'glass-effect border-gradient',
+      isSidebarCollapsed ? 'w-16' : 'w-64',
+    ]"
   >
-    <div class="p-2">
+    <!-- Header / Logo Section -->
+    <div class="flex flex-col border-b border-sidebar-border p-3">
       <UserDropdown :isCollapsed="isSidebarCollapsed" />
-    </div>
-    <div class="flex-1 overflow-y-auto">
-      <div class="flex flex-col">
-        <SidebarLink
-          id="notifications-btn"
-          :label="__('Notifications')"
-          :icon="NotificationsIcon"
-          :isCollapsed="isSidebarCollapsed"
-          @click="() => toggleNotificationPanel()"
-          class="relative mx-2 my-[1.5px]"
+
+      <!-- Theme Toggle - Only show when expanded -->
+      <transition
+        enter-active-class="transition-all duration-200 ease-out"
+        leave-active-class="transition-all duration-150 ease-in"
+        enter-from-class="opacity-0 -translate-y-2"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 -translate-y-2"
+      >
+        <div
+          v-if="!isSidebarCollapsed"
+          class="mt-2 flex items-center justify-between rounded-lg bg-accent/50 p-2"
         >
-          <template #right>
-            <Badge
-              v-if="!isSidebarCollapsed && unreadNotificationsCount"
-              :label="unreadNotificationsCount"
-              variant="subtle"
-            />
-            <div
-              v-else-if="unreadNotificationsCount"
-              class="absolute -left-1.5 top-1 z-20 h-[5px] w-[5px] translate-x-6 translate-y-1 rounded-full bg-surface-gray-6 ring-1 ring-white"
-            />
-          </template>
-        </SidebarLink>
-      </div>
-      <div v-for="view in allViews" :key="view.label">
-        <div class="border-t mx-2 my-1.5" />
+          <span class="text-xs font-medium text-accent-foreground/70">Theme</span>
+          <ThemeSwitcher
+            :show-label="false"
+            className="!static !p-0 !bg-transparent"
+            @change="handleThemeChange"
+          />
+        </div>
+      </transition>
+    </div>
+
+    <!-- Navigation Section -->
+    <ScrollArea
+      ref="scrollAreaRef"
+      scroll-class="sidebar-scroll"
+      content-class="flex flex-col gap-1 p-2"
+    >
+      <!-- Notifications -->
+      <SidebarLink
+        id="notifications-btn"
+        :label="__('Notifications')"
+        :icon="NotificationsIcon"
+        :isCollapsed="isSidebarCollapsed"
+        @click="() => toggleNotificationPanel()"
+      >
+        <template #right>
+          <Badge
+            v-if="!isSidebarCollapsed && unreadNotificationsCount"
+            :label="unreadNotificationsCount"
+            variant="destructive"
+            class="ml-auto"
+          />
+          <div
+            v-else-if="unreadNotificationsCount"
+            class="absolute -right-1 top-2 z-20 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar"
+          />
+        </template>
+      </SidebarLink>
+
+      <Separator orientation="horizontal" class="mx-1.5 my-1" />
+
+      <!-- Navigation Sections -->
+      <template v-for="view in allViews" :key="view.label">
         <CollapsibleSection
           :label="view.name"
           :hideLabel="view.hideLabel"
           :opened="view.opened"
         >
           <template #header="{ opened, hide, toggle }">
-            <div
+            <button
               v-if="!hide"
-              class="flex items-center cursor-pointer gap-1.5 text-base text-ink-gray-5 transition-all duration-300 ease-in-out"
-              :class="
+              :class="[
+                'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-colors',
+                'hover:bg-sidebar-accent hover:text-sidebar-foreground',
+                'focus:outline-none focus:ring-2 focus:ring-sidebar-ring',
                 isSidebarCollapsed
-                  ? 'h-0 overflow-hidden opacity-0'
-                  : 'px-4 pt-[11px] pb-2.5 w-auto opacity-100'
-              "
+                  ? 'h-0 w-0 overflow-hidden opacity-0 p-0'
+                  : 'opacity-100',
+              ]"
               @click="toggle()"
             >
-              <FeatherIcon
-                name="chevron-right"
-                class="h-4 text-ink-gray-9 transition-all duration-300 ease-in-out"
-                :class="{ 'rotate-90': opened }"
+              <ChevronRightIcon
+                :class="[
+                  'h-4 w-4 shrink-0 transition-transform duration-200',
+                  opened && 'rotate-90',
+                ]"
               />
               <span>{{ __(view.name) }}</span>
-            </div>
+            </button>
           </template>
-          <nav class="flex flex-col">
+
+          <nav class="flex flex-col gap-0.5">
             <SidebarLink
               v-for="link in view.views"
+              :key="link.label"
               :icon="link.icon"
               :label="__(link.label)"
               :to="link.to"
               :isCollapsed="isSidebarCollapsed"
-              class="mx-2 my-[1.5px]"
             />
           </nav>
         </CollapsibleSection>
-      </div>
-    </div>
-    <div class="m-2 flex flex-col gap-1">
-      <div class="flex flex-col gap-2 mb-1">
+      </template>
+    </ScrollArea>
+
+    <!-- Footer Section -->
+    <div class="flex flex-col border-t border-sidebar-border p-2">
+      <!-- Banners -->
+      <div class="flex flex-col gap-2 pb-2">
         <SignupBanner
           v-if="isDemoSite"
           :isSidebarCollapsed="isSidebarCollapsed"
@@ -85,6 +126,8 @@
           :isSidebarCollapsed="isSidebarCollapsed"
         />
       </div>
+
+      <!-- Help & Collapse -->
       <SidebarLink
         v-if="isOnboardingStepsCompleted"
         :label="__('Help')"
@@ -100,22 +143,43 @@
           <HelpIcon class="h-4 w-4" />
         </template>
       </SidebarLink>
-      <SidebarLink
-        :label="isSidebarCollapsed ? __('Expand') : __('Collapse')"
-        :isCollapsed="isSidebarCollapsed"
-        @click="isSidebarCollapsed = !isSidebarCollapsed"
-        class=""
+
+      <!-- Collapse/Expand Button -->
+      <button
+        :class="[
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/70 transition-all',
+          'hover:bg-sidebar-accent hover:text-sidebar-foreground',
+          'focus:outline-none focus:ring-2 focus:ring-sidebar-ring',
+        ]"
+        @click="toggleCollapse"
       >
-        <template #icon>
-          <span class="grid h-4 w-4 flex-shrink-0 place-items-center">
-            <CollapseSidebar
-              class="h-4 w-4 text-ink-gray-7 duration-300 ease-in-out"
-              :class="{ '[transform:rotateY(180deg)]': isSidebarCollapsed }"
-            />
+        <span
+          class="grid h-5 w-5 flex-shrink-0 place-items-center"
+          :class="{ 'mx-auto': isSidebarCollapsed }"
+        >
+          <CollapseSidebar
+            :class="[
+              'h-5 w-5 text-sidebar-foreground/70 transition-transform duration-300',
+              isSidebarCollapsed && 'rotate-180',
+            ]"
+          />
+        </span>
+        <transition
+          enter-active-class="transition-all duration-200 ease-out"
+          leave-active-class="transition-all duration-150 ease-in"
+          enter-from-class="opacity-0 -translate-x-2"
+          enter-to-class="opacity-100 translate-x-0"
+          leave-from-class="opacity-100 translate-x-0"
+          leave-to-class="opacity-0 -translate-x-2"
+        >
+          <span v-if="!isSidebarCollapsed">
+            {{ isSidebarCollapsed ? __('Expand') : __('Collapse') }}
           </span>
-        </template>
-      </SidebarLink>
+        </transition>
+      </button>
     </div>
+
+    <!-- Modals & Components -->
     <Notifications />
     <Settings />
     <HelpModal
@@ -133,45 +197,27 @@
       v-model="showIntermediateModal"
       :currentStep="currentStep"
     />
-  </div>
+  </aside>
 </template>
 
 <script setup>
-import LucideLayoutDashboard from '~icons/lucide/layout-dashboard'
-import CRMLogo from '@/components/Icons/CRMLogo.vue'
-import InviteIcon from '@/components/Icons/InviteIcon.vue'
-import ConvertIcon from '@/components/Icons/ConvertIcon.vue'
-import CommentIcon from '@/components/Icons/CommentIcon.vue'
-import EmailIcon from '@/components/Icons/EmailIcon.vue'
-import StepsIcon from '@/components/Icons/StepsIcon.vue'
+import { ref, computed, markRaw, onMounted } from 'vue'
+import { useStorage } from '@vueuse/core'
+import router from '@/router'
+import { useGlobalTheme } from '@/composables/theme'
+import ScrollArea from '@/components/ui/ScrollArea.vue'
+import Separator from '@/components/ui/Separator.vue'
+import Badge from '@/components/ui/Badge.vue'
+import ThemeSwitcher from '@/components/ui/ThemeSwitcher.vue'
 import CollapsibleSection from '@/components/CollapsibleSection.vue'
-import PinIcon from '@/components/Icons/PinIcon.vue'
-import UserDropdown from '@/components/UserDropdown.vue'
-import SquareAsterisk from '@/components/Icons/SquareAsterisk.vue'
-import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
-import DealsIcon from '@/components/Icons/DealsIcon.vue'
-import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
-import OrganizationsIcon from '@/components/Icons/OrganizationsIcon.vue'
-import NoteIcon from '@/components/Icons/NoteIcon.vue'
-import TaskIcon from '@/components/Icons/TaskIcon.vue'
-import CalendarIcon from '@/components/Icons/CalendarIcon.vue'
-import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
-import CollapseSidebar from '@/components/Icons/CollapseSidebar.vue'
-import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
-import HelpIcon from '@/components/Icons/HelpIcon.vue'
 import SidebarLink from '@/components/SidebarLink.vue'
+import UserDropdown from '@/components/UserDropdown.vue'
 import Notifications from '@/components/Notifications.vue'
 import Settings from '@/components/Settings/Settings.vue'
-import { viewsStore } from '@/stores/views'
-import {
-  unreadNotificationsCount,
-  notificationsStore,
-} from '@/stores/notifications'
-import { usersStore } from '@/stores/users'
-import { sessionStore } from '@/stores/session'
-import { showSettings, activeSettingsPage } from '@/composables/settings'
-import { showChangePasswordModal } from '@/composables/modals'
-import { FeatherIcon, call } from 'frappe-ui'
+import CRMLogo from '@/components/Icons/CRMLogo.vue'
+import HelpIcon from '@/components/Icons/HelpIcon.vue'
+import CollapseSidebar from '@/components/Icons/CollapseSidebar.vue'
+import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import {
   SignupBanner,
   TrialBanner,
@@ -183,67 +229,71 @@ import {
   IntermediateStepModal,
   useTelemetry,
 } from 'frappe-ui/frappe'
-import router from '@/router'
-import { useStorage } from '@vueuse/core'
-import { ref, reactive, computed, markRaw, onMounted } from 'vue'
+import { viewsStore } from '@/stores/views'
+import { notificationsStore, unreadNotificationsCount } from '@/stores/notifications'
+import { sessionStore } from '@/stores/session'
+import { usersStore } from '@/stores/users'
+import { showSettings, activeSettingsPage } from '@/composables/settings'
+import { showChangePasswordModal } from '@/composables/modals'
+import { FeatherIcon, call } from 'frappe-ui'
 
+// Chevron icon
+const ChevronRightIcon = {
+  template: `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m9 18 6-6-6-6"/>
+    </svg>
+  `,
+}
+
+// Stores & Composables
 const { getPinnedViews, getPublicViews } = viewsStore()
 const { toggle: toggleNotificationPanel } = notificationsStore()
 const { capture } = useTelemetry()
+const { theme } = useGlobalTheme()
 
+// State
 const isSidebarCollapsed = useStorage('isSidebarCollapsed', false)
-
 const isFCSite = ref(window.is_fc_site)
 const isDemoSite = ref(window.is_demo_site)
+const scrollAreaRef = ref(null)
+
+// Onboarding
+const { user } = sessionStore()
+const { users, isManager } = usersStore()
+const { isOnboardingStepsCompleted, setUp } = useOnboarding('frappecrm')
+
+// Navigation links
+import LucideLayoutDashboard from '~icons/lucide/layout-dashboard'
+import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
+import DealsIcon from '@/components/Icons/DealsIcon.vue'
+import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
+import OrganizationsIcon from '@/components/Icons/OrganizationsIcon.vue'
+import NoteIcon from '@/components/Icons/NoteIcon.vue'
+import TaskIcon from '@/components/Icons/TaskIcon.vue'
+import CalendarIcon from '@/components/Icons/CalendarIcon.vue'
+import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
+import PinIcon from '@/components/Icons/PinIcon.vue'
+import SquareAsterisk from '@/components/Icons/SquareAsterisk.vue'
+import InviteIcon from '@/components/Icons/InviteIcon.vue'
+import ConvertIcon from '@/components/Icons/ConvertIcon.vue'
+import CommentIcon from '@/components/Icons/CommentIcon.vue'
+import EmailIcon from '@/components/Icons/EmailIcon.vue'
+import StepsIcon from '@/components/Icons/StepsIcon.vue'
 
 const links = [
-  {
-    label: 'Dashboard',
-    icon: LucideLayoutDashboard,
-    to: 'Dashboard',
-  },
-  {
-    label: 'Leads',
-    icon: LeadsIcon,
-    to: 'Leads',
-  },
-  {
-    label: 'Deals',
-    icon: DealsIcon,
-    to: 'Deals',
-  },
-  {
-    label: 'Contacts',
-    icon: ContactsIcon,
-    to: 'Contacts',
-  },
-  {
-    label: 'Organizations',
-    icon: OrganizationsIcon,
-    to: 'Organizations',
-  },
-  {
-    label: 'Notes',
-    icon: NoteIcon,
-    to: 'Notes',
-  },
-  {
-    label: 'Tasks',
-    icon: TaskIcon,
-    to: 'Tasks',
-  },
-  {
-    label: 'Calendar',
-    icon: CalendarIcon,
-    to: 'Calendar',
-  },
-  {
-    label: 'Call Logs',
-    icon: PhoneIcon,
-    to: 'Call Logs',
-  },
+  { label: 'Dashboard', icon: LucideLayoutDashboard, to: 'Dashboard' },
+  { label: 'Leads', icon: LeadsIcon, to: 'Leads' },
+  { label: 'Deals', icon: DealsIcon, to: 'Deals' },
+  { label: 'Contacts', icon: ContactsIcon, to: 'Contacts' },
+  { label: 'Organizations', icon: OrganizationsIcon, to: 'Organizations' },
+  { label: 'Notes', icon: NoteIcon, to: 'Notes' },
+  { label: 'Tasks', icon: TaskIcon, to: 'Tasks' },
+  { label: 'Calendar', icon: CalendarIcon, to: 'Calendar' },
+  { label: 'Call Logs', icon: PhoneIcon, to: 'Call Logs' },
 ]
 
+// Views computation
 const allViews = computed(() => {
   let _views = [
     {
@@ -258,6 +308,7 @@ const allViews = computed(() => {
       }),
     },
   ]
+
   if (getPublicViews().length) {
     _views.push({
       name: 'Public views',
@@ -273,65 +324,58 @@ const allViews = computed(() => {
       views: parseView(getPinnedViews()),
     })
   }
+
   return _views
 })
 
 function parseView(views) {
-  return views.map((view) => {
-    return {
-      label: view.label,
-      icon: getIcon(view.route_name, view.icon),
-      to: {
-        name: view.route_name,
-        params: { viewType: view.type || 'list' },
-        query: { view: view.name },
-      },
-    }
-  })
+  return views.map((view) => ({
+    label: view.label,
+    icon: getIcon(view.route_name, view.icon),
+    to: {
+      name: view.route_name,
+      params: { viewType: view.type || 'list' },
+      query: { view: view.name },
+    },
+  }))
 }
 
 function getIcon(routeName, icon) {
   if (icon) return icon
 
-  switch (routeName) {
-    case 'Leads':
-      return LeadsIcon
-    case 'Deals':
-      return DealsIcon
-    case 'Contacts':
-      return ContactsIcon
-    case 'Organizations':
-      return OrganizationsIcon
-    case 'Notes':
-      return NoteIcon
-    case 'Call Logs':
-      return PhoneIcon
-    default:
-      return PinIcon
+  const iconMap = {
+    Leads: LeadsIcon,
+    Deals: DealsIcon,
+    Contacts: ContactsIcon,
+    Organizations: OrganizationsIcon,
+    Notes: NoteIcon,
+    'Call Logs': PhoneIcon,
+  }
+
+  return iconMap[routeName] || PinIcon
+}
+
+// Theme handling
+function handleThemeChange(newTheme) {
+  console.log('Theme changed to:', newTheme)
+}
+
+// Toggle collapse
+function toggleCollapse() {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+  // Scroll to top after expand
+  if (!isSidebarCollapsed.value && scrollAreaRef.value) {
+    setTimeout(() => {
+      scrollAreaRef.value.scrollTop?.()
+    }, 300)
   }
 }
 
-// onboarding
-const { user } = sessionStore()
-const { users, isManager } = usersStore()
-const { isOnboardingStepsCompleted, setUp } = useOnboarding('frappecrm')
-
-async function getFirstLead() {
-  let firstLead = localStorage.getItem('firstLead' + user)
-  if (firstLead) return firstLead
-  return await call('crm.api.onboarding.get_first_lead')
-}
-
-async function getFirstDeal() {
-  let firstDeal = localStorage.getItem('firstDeal' + user)
-  if (firstDeal) return firstDeal
-  return await call('crm.api.onboarding.get_first_deal')
-}
-
+// Onboarding steps (kept from original)
 const showIntermediateModal = ref(false)
 const currentStep = ref({})
 
-const steps = reactive([
+const steps = [
   {
     name: 'setup_your_password',
     title: __('Setup your password'),
@@ -372,7 +416,6 @@ const steps = reactive([
     dependsOn: 'create_first_lead',
     onClick: async () => {
       minimize.value = true
-
       currentStep.value = {
         title: __('Convert lead to deal'),
         buttonLabel: __('Convert'),
@@ -380,7 +423,6 @@ const steps = reactive([
         onClick: async () => {
           showIntermediateModal.value = false
           currentStep.value = {}
-
           let lead = await getFirstLead()
           if (lead) {
             router.push({ name: 'Lead', params: { leadId: lead } })
@@ -400,7 +442,6 @@ const steps = reactive([
     onClick: async () => {
       minimize.value = true
       let deal = await getFirstDeal()
-
       if (deal) {
         router.push({
           name: 'Deal',
@@ -420,7 +461,6 @@ const steps = reactive([
     onClick: async () => {
       minimize.value = true
       let deal = await getFirstDeal()
-
       if (deal) {
         router.push({
           name: 'Deal',
@@ -441,7 +481,6 @@ const steps = reactive([
     onClick: async () => {
       minimize.value = true
       let deal = await getFirstDeal()
-
       if (deal) {
         router.push({
           name: 'Deal',
@@ -462,7 +501,6 @@ const steps = reactive([
     onClick: async () => {
       minimize.value = true
       let deal = await getFirstDeal()
-
       if (deal) {
         router.push({
           name: 'Deal',
@@ -482,7 +520,6 @@ const steps = reactive([
     dependsOn: 'convert_lead_to_deal',
     onClick: async () => {
       minimize.value = true
-
       currentStep.value = {
         title: __('Change deal status'),
         buttonLabel: __('Change'),
@@ -490,7 +527,6 @@ const steps = reactive([
         onClick: async () => {
           showIntermediateModal.value = false
           currentStep.value = {}
-
           let deal = await getFirstDeal()
           if (deal) {
             router.push({
@@ -506,22 +542,21 @@ const steps = reactive([
       showIntermediateModal.value = true
     },
   },
-])
+]
 
-onMounted(async () => {
-  await users.promise
+async function getFirstLead() {
+  let firstLead = localStorage.getItem('firstLead' + user)
+  if (firstLead) return firstLead
+  return await call('crm.api.onboarding.get_first_lead')
+}
 
-  const filteredSteps = steps.filter((step) => {
-    if (step.condition) {
-      return step.condition()
-    }
-    return true
-  })
+async function getFirstDeal() {
+  let firstDeal = localStorage.getItem('firstDeal' + user)
+  if (firstDeal) return firstDeal
+  return await call('crm.api.onboarding.get_first_deal')
+}
 
-  setUp(filteredSteps)
-})
-
-// help center
+// Help center articles
 const articles = ref([
   {
     title: __('Introduction'),
@@ -610,4 +645,55 @@ const articles = ref([
     ],
   },
 ])
+
+onMounted(async () => {
+  await users.promise
+  const filteredSteps = steps.filter((step) => {
+    if (step.condition) {
+      return step.condition()
+    }
+    return true
+  })
+  setUp(filteredSteps)
+})
 </script>
+
+<style scoped>
+/* Smooth transitions for collapse/expand */
+.group/sidebar {
+  transition-property: width, transform, opacity;
+}
+
+/* Custom scrollbar for sidebar */
+:deep(.sidebar-scroll) {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+}
+
+:deep(.sidebar-scroll)::-webkit-scrollbar {
+  width: 4px;
+}
+
+:deep(.sidebar-scroll)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:deep(.sidebar-scroll)::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 9999px;
+}
+
+:deep(.sidebar-scroll)::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.3);
+}
+
+/* Ensure icons scale properly in collapsed state */
+.sidebar-link-icon {
+  transition: all 0.2s ease;
+}
+
+/* Tooltip positioning fix */
+.tooltip {
+  pointer-events: none;
+}
+</style>
